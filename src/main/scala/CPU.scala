@@ -21,8 +21,8 @@ class CPU extends MultiIOModule {
   /**
     You need to create the classes for these yourself
     */
-  // val IFBarrier  = Module(new IFBarrier).io
-  // val IDBarrier  = Module(new IDBarrier).io
+  val IFBarrier  = Module(new IFBarrier).io
+  val IDBarrier  = Module(new IDBarrier).io
   // val EXBarrier  = Module(new EXBarrier).io
   // val MEMBarrier = Module(new MEMBarrier).io
 
@@ -51,7 +51,12 @@ class CPU extends MultiIOModule {
   testHarness.currentPC  := IF.testHarness.PC
 
 
-  /**
-    TODO: Your code here
-    */
+  // IF Barrier connection
+  IFBarrier.instructionIn := IF.io.output
+  IFBarrier.PCIn := IF.io.PC
+
+  ID.io.input := IFBarrier.instructionOut
+  ID.io.PC := IFBarrier.PCOut
+
+  // ID Barrier connection
 }
