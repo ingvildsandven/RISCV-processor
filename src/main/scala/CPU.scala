@@ -1,6 +1,7 @@
 package FiveStage
 
 import chisel3._
+import chisel3.util._
 import chisel3.core.Input
 import chisel3.experimental.MultiIOModule
 import chisel3.experimental._
@@ -21,14 +22,14 @@ class CPU extends MultiIOModule {
   /**
     You need to create the classes for these yourself
     */
-  val IFBarrier  = Module(new IFBarrier).io
-  val IDBarrier  = Module(new IDBarrier).io
-  // val EXBarrier  = Module(new EXBarrier).io
-  // val MEMBarrier = Module(new MEMBarrier).io
+  val IFIDBarrier   = Module(new IFIDBarrier).io
+  val IDEXBarrier   = Module(new IDEXBarrier).io
+  val EXMEMBarrier  = Module(new EXMEMBarrier).io
+  val MEMWBBarrier    = Module(new MEMWBBarrier).io
 
   val ID  = Module(new InstructionDecode)
   val IF  = Module(new InstructionFetch)
-  // val EX  = Module(new Execute)
+  val EX  = Module(new Execution)
   val MEM = Module(new MemoryFetch)
   // val WB  = Module(new Execute) (You may not need this one?)
 
@@ -51,12 +52,70 @@ class CPU extends MultiIOModule {
   testHarness.currentPC  := IF.testHarness.PC
 
 
-  // IF Barrier connection
-  IFBarrier.instructionIn := IF.io.output
-  IFBarrier.PCIn := IF.io.PC
+  // IF-ID Barrier connection
+  IFIDBarrier.instructionIn := IF.io.output
+  IFIDBarrier.PCIn          := IF.io.PC
 
-  ID.io.input := IFBarrier.instructionOut
-  ID.io.PC := IFBarrier.PCOut
+  ID.io.input               := IFIDBarrier.instructionOut
+  ID.io.PCIn                := IFIDBarrier.PCOut
 
-  // ID Barrier connection
+  // ID-EX Barrier connection
+  IDEXBarrier.PCIn             := ID.io.PCOut
+  IDEXBarrier.controlSignalsIn := ID.io.controlSignals
+  IDEXBarrier.branchTypeIn     := ID.io.branchType
+  IDEXBarrier.op1SelectIn      := ID.io.op1Select
+  IDEXBarrier.op2SelectIn      := ID.io.op2Select
+  IDEXBarrier.immediateIn      := ID.io.immediate
+  IDEXBarrier.ALUopIn          := ID.io.ALUop
+  IDEXBarrier.readData1In      := ID.io.readData1
+  IDEXBarrier.readData2In      := ID.io.readData2
+  IDEXBarrier.registerRdIn     := ID.io.registerRd
+
+  EX.io.PC             := IDEXBarrier.PCOut    
+  EX.io.controlSignals := IDEXBarrier.controlSignalsOut
+  EX.io.branchType     := IDEXBarrier.branchTypeOut
+  EX.io.op1Select      := IDEXBarrier.op1SelectOut
+  EX.io.op2Select      := IDEXBarrier.op2SelectOut
+  EX.io.immediate      := IDEXBarrier.immediateOut
+  EX.io.ALUop          := IDEXBarrier.ALUopOut
+  EX.io.readData1      := IDEXBarrier.readData1Out
+  EX.io.readData2      := IDEXBarrier.readData2Out
+  EX.io.registerRd     := IDEXBarrier.registerRdOut
+
+  // EX-MEM Barrier Connection
+  EXMEMBarrier.aluResultIn        := EX.io.aluResult
+  EXMEMBarrier.branchTakenIn      := EX.io.branchTaken   
+  EXMEMBarrier.branchTargetIn     := EX.io.branchTarget
+  EXMEMBarrier.readData2In        := EX.io.readData2
+  EXMEMBarrier.registerRdIn       := EX.io.registerRd
+  EXMEMBarrier.controlSignalsIn   := EX.io.controlSignals
+     
+  MEM.io.aluResult        := EXMEMBarrier.aluResultOut 
+  MEM.io.branchTaken      := EXMEMBarrier.branchTakenOut
+  MEM.io.branchTarget     := EXMEMBarrier.branchTargetOut  
+  MEM.io.readData2        := EXMEMBarrier.readData2Out 
+  MEM.io.registerRd       := EXMEMBarrier.registerRdOut  
+  MEM.io.controlSignals   := EXMEMBarrier.controlSignalsOut 
+
+  // MEM-WB
+  MEMWBBarrier.aluResultIn      := MEM.io.aluResultOut
+  MEMWBBarrier.memoryDataIn     := MEM.io.memoryDataOut
+  MEMWBBarrier.controlSignalsIn := MEM.io.controlSignalsOut
+  MEMWBBarrier.registerRdIn     := MEM.io.registerRdOut
+  
+
+  // WB logic
+  
+  // Mux(condition, valueIfTrue, valueIfFalse)
+  val writeData = Mux(
+    MEMWBBarrier.controlSignalsOut.memRead,
+    MEMWBBarrier.memoryDataOut,
+    MEMWBBarrier.aluResultOut
+  )
+
+  ID.io.writeEnable := MEMWBBarrier.controlSignalsOut.regWrite
+  ID.io.writeAddress := MEMWBBarrier.registerRdOut
+  ID.io.writeData := writeData
+
+ 
 }

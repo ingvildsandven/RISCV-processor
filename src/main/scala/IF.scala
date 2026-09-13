@@ -52,6 +52,7 @@ class InstructionFetch extends MultiIOModule {
   instruction := IMEM.io.instruction.asTypeOf(new Instruction)
 
   io.output := instruction
+  
   /**
     * Setup. You should not change this code.
     */
