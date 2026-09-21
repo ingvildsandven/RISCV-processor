@@ -11,7 +11,7 @@ class IFIDBarrier extends MultiIOModule{
             val instructionOut  = Output(new Instruction)
             val PCIn            = Input(UInt(32.W))
             val PCOut           = Output(UInt(32.W))
-            
+            val flush           = Input(Bool())
         }
     )
 
@@ -21,7 +21,11 @@ class IFIDBarrier extends MultiIOModule{
     PCDelayed         := io.PCIn
     io.PCOut          := PCDelayed
 
-    io.instructionOut := io.instructionIn
+    when(io.flush) {
+        io.instructionOut := Instruction.NOP
+    }.otherwise {
+        io.instructionOut := io.instructionIn
+    }
 }
 
 class IDEXBarrier extends MultiIOModule{
@@ -40,6 +44,7 @@ class IDEXBarrier extends MultiIOModule{
             val readData1In       = Input(UInt(32.W))
             val readData2In       = Input(UInt(32.W))
             val registerRdIn      = Input(UInt(5.W))
+            val flush             = Input(Bool())
 
             // Output
             val PCOut             = Output(UInt(32.W))
@@ -70,7 +75,6 @@ class IDEXBarrier extends MultiIOModule{
 
     // Values to each register
     PCDelayed                := io.PCIn
-    controlSignalsDelayed    := io.controlSignalsIn
     branchTypeOutDelayed     := io.branchTypeIn
     op1SelectDelayed         := io.op1SelectIn
     op2SelectDelayed         := io.op2SelectIn
@@ -79,6 +83,12 @@ class IDEXBarrier extends MultiIOModule{
     readData1Delayed         := io.readData1In
     readData2Delayed         := io.readData2In
     registerRdOutDelayed     := io.registerRdIn
+
+    when(io.flush){
+        controlSignalsDelayed := ControlSignals.nop
+    }.otherwise{
+        controlSignalsDelayed := io.controlSignalsIn
+    }
 
     // Set output
     io.PCOut                 := PCDelayed

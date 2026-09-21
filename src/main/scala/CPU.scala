@@ -82,6 +82,9 @@ class CPU extends MultiIOModule {
   EX.io.readData2      := IDEXBarrier.readData2Out
   EX.io.registerRd     := IDEXBarrier.registerRdOut
 
+  IFIDBarrier.flush := EX.io.branchTaken // IFID is flushed when EX is set
+  IDEXBarrier.flush := EX.io.branchTaken
+
   // EX to IF, jump connection
   IF.io.branchTaken := EX.io.branchTaken
   IF.io.branchTarget := EX.io.branchTarget
