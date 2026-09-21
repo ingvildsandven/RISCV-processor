@@ -82,17 +82,17 @@ class CPU extends MultiIOModule {
   EX.io.readData2      := IDEXBarrier.readData2Out
   EX.io.registerRd     := IDEXBarrier.registerRdOut
 
+  // EX to IF, jump connection
+  IF.io.branchTaken := EX.io.branchTaken
+  IF.io.branchTarget := EX.io.branchTarget
+
   // EX-MEM Barrier Connection
   EXMEMBarrier.aluResultIn        := EX.io.aluResult
-  EXMEMBarrier.branchTakenIn      := EX.io.branchTaken   
-  EXMEMBarrier.branchTargetIn     := EX.io.branchTarget
   EXMEMBarrier.readData2In        := EX.io.readData2Out
   EXMEMBarrier.registerRdIn       := EX.io.registerRdOut
   EXMEMBarrier.controlSignalsIn   := EX.io.controlSignalsOut
      
   MEM.io.aluResult        := EXMEMBarrier.aluResultOut 
-  MEM.io.branchTaken      := EXMEMBarrier.branchTakenOut
-  MEM.io.branchTarget     := EXMEMBarrier.branchTargetOut  
   MEM.io.readData2        := EXMEMBarrier.readData2Out 
   MEM.io.registerRd       := EXMEMBarrier.registerRdOut  
   MEM.io.controlSignals   := EXMEMBarrier.controlSignalsOut 

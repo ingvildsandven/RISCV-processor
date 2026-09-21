@@ -99,16 +99,12 @@ class EXMEMBarrier extends MultiIOModule { // AI generated
     new Bundle {
       // Inputs
       val aluResultIn         = Input(UInt(32.W))
-      val branchTakenIn       = Input(Bool())
-      val branchTargetIn      = Input(UInt(32.W))
       val readData2In         = Input(UInt(32.W))
       val registerRdIn        = Input(UInt(5.W))
       val controlSignalsIn    = Input(new ControlSignals)
 
       // Outputs
       val aluResultOut        = Output(UInt(32.W))
-      val branchTakenOut      = Output(Bool())
-      val branchTargetOut     = Output(UInt(32.W))
       val readData2Out        = Output(UInt(32.W))
       val registerRdOut       = Output(UInt(5.W))
       val controlSignalsOut   = Output(new ControlSignals)
@@ -117,24 +113,18 @@ class EXMEMBarrier extends MultiIOModule { // AI generated
 
   // Registers
   val aluResultDelayed       = RegInit(0.U(32.W))
-  val branchTakenDelayed     = RegInit(false.B)
-  val branchTargetDelayed    = RegInit(0.U(32.W))
   val readData2Delayed       = RegInit(0.U(32.W))
   val registerRdDelayed      = RegInit(0.U(5.W))
   val controlSignalsDelayed  = RegInit(0.U.asTypeOf(new ControlSignals))
 
   // Store EX outputs for one cycle
   aluResultDelayed      := io.aluResultIn
-  branchTakenDelayed    := io.branchTakenIn
-  branchTargetDelayed   := io.branchTargetIn
   readData2Delayed      := io.readData2In
   registerRdDelayed     := io.registerRdIn
   controlSignalsDelayed := io.controlSignalsIn
 
   // Outputs
   io.aluResultOut       := aluResultDelayed
-  io.branchTakenOut     := branchTakenDelayed
-  io.branchTargetOut    := branchTargetDelayed
   io.readData2Out       := readData2Delayed
   io.registerRdOut      := registerRdDelayed
   io.controlSignalsOut  := controlSignalsDelayed

@@ -69,11 +69,11 @@ class Execution extends MultiIOModule {
   branch.r2         := io.readData2
   branch.branchType := io.branchType
 
-  io.branchTaken := (io.controlSignals.branch || io.controlSignals.jump) && branch.branchTaken
-  io.branchTarget := io.PC + io.immediate.asUInt
+  io.branchTaken    := (io.controlSignals.branch || branch.branchTaken) && io.controlSignals.jump
+  io.branchTarget   := io.PC + io.immediate.asUInt
 
   // Sets the output 
-  io.aluResult  := alu.aluResult
+  io.aluResult         := alu.aluResult
   io.readData2Out      := io.readData2
   io.registerRdOut     := io.registerRd
   io.controlSignalsOut := io.controlSignals

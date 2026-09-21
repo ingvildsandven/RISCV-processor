@@ -19,8 +19,6 @@ class MemoryFetch() extends MultiIOModule {
   val io = IO(
     new Bundle {
       val aluResult         = Input(UInt(32.W))
-      val branchTaken       = Input(Bool())
-      val branchTarget      = Input(UInt(32.W))
       val readData2         = Input(UInt(32.W))
       val registerRd        = Input(UInt(5.W))
       val controlSignals    = Input(new ControlSignals)
