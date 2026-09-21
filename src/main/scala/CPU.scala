@@ -86,9 +86,9 @@ class CPU extends MultiIOModule {
   EXMEMBarrier.aluResultIn        := EX.io.aluResult
   EXMEMBarrier.branchTakenIn      := EX.io.branchTaken   
   EXMEMBarrier.branchTargetIn     := EX.io.branchTarget
-  EXMEMBarrier.readData2In        := EX.io.readData2
-  EXMEMBarrier.registerRdIn       := EX.io.registerRd
-  EXMEMBarrier.controlSignalsIn   := EX.io.controlSignals
+  EXMEMBarrier.readData2In        := EX.io.readData2Out
+  EXMEMBarrier.registerRdIn       := EX.io.registerRdOut
+  EXMEMBarrier.controlSignalsIn   := EX.io.controlSignalsOut
      
   MEM.io.aluResult        := EXMEMBarrier.aluResultOut 
   MEM.io.branchTaken      := EXMEMBarrier.branchTakenOut

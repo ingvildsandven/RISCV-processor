@@ -42,7 +42,7 @@ class MemoryFetch() extends MultiIOModule {
   testHarness.DMEMpeek    := DMEM.io.dataOut
   testHarness.testUpdates := DMEM.testHarness.testUpdates
 
-  //
+
   DMEM.io.dataIn      := io.readData2
   DMEM.io.dataAddress := io.aluResult(11, 0)
   DMEM.io.writeEnable := io.controlSignals.memWrite
