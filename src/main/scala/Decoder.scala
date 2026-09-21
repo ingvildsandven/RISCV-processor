@@ -82,8 +82,8 @@ class Decoder() extends Module {
     BLTU   -> List(N,        N,       N,        Y,       N,    branchType.ltu, rs1,       rs2,       BTYPE,        ALUOps.DC),
     BGEU   -> List(N,        N,       N,        Y,       N,    branchType.gteu,rs1,       rs2,       BTYPE,        ALUOps.DC),
 
-    JAL    -> List(Y,        N,       N,        N,       Y,    branchType.jump, rs1,       imm,       JTYPE,        ALUOps.DC)
-  //  JALR   -> List(Y,        N,       N,        N,       Y,    branchType.jump, rs1,       imm,       ITYPE,        ALUOps.DC)
+    JAL    -> List(Y,        N,       N,        N,       Y,    branchType.jump, rs1,       imm,       JTYPE,        ALUOps.DC),
+    JALR   -> List(Y,        N,       N,        N,       Y,    branchType.jump, rs1,       imm,       ITYPE,        ALUOps.ADD)
     
     )
 

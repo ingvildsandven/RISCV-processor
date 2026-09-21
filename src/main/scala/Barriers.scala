@@ -11,6 +11,7 @@ class IFIDBarrier extends MultiIOModule{
             val instructionOut  = Output(new Instruction)
             val PCIn            = Input(UInt(32.W))
             val PCOut           = Output(UInt(32.W))
+            
         }
     )
 
@@ -98,12 +99,14 @@ class EXMEMBarrier extends MultiIOModule { // AI generated
   val io = IO(
     new Bundle {
       // Inputs
+      val PCIn                = Input(UInt(32.W))
       val aluResultIn         = Input(UInt(32.W))
       val readData2In         = Input(UInt(32.W))
       val registerRdIn        = Input(UInt(5.W))
       val controlSignalsIn    = Input(new ControlSignals)
 
       // Outputs
+      val PCOut               = Output(UInt(32.W))
       val aluResultOut        = Output(UInt(32.W))
       val readData2Out        = Output(UInt(32.W))
       val registerRdOut       = Output(UInt(5.W))
@@ -112,18 +115,21 @@ class EXMEMBarrier extends MultiIOModule { // AI generated
   )
 
   // Registers
+  val PCDelayed              = RegInit(0.U(32.W))
   val aluResultDelayed       = RegInit(0.U(32.W))
   val readData2Delayed       = RegInit(0.U(32.W))
   val registerRdDelayed      = RegInit(0.U(5.W))
   val controlSignalsDelayed  = RegInit(0.U.asTypeOf(new ControlSignals))
 
   // Store EX outputs for one cycle
+  PCDelayed             := io.PCIn
   aluResultDelayed      := io.aluResultIn
   readData2Delayed      := io.readData2In
   registerRdDelayed     := io.registerRdIn
   controlSignalsDelayed := io.controlSignalsIn
 
   // Outputs
+  io.PCOut              := PCDelayed
   io.aluResultOut       := aluResultDelayed
   io.readData2Out       := readData2Delayed
   io.registerRdOut      := registerRdDelayed
@@ -134,25 +140,30 @@ class MEMWBBarrier extends MultiIOModule {
 
   val io = IO(
     new Bundle {
+        val PCIn                = Input(UInt(32.W))
         val memoryDataIn        = Input(UInt(32.W))
         val aluResultIn         = Input(UInt(32.W))
         val controlSignalsIn    = Input(new ControlSignals)
         val registerRdIn        = Input(UInt(5.W))
 
+        val PCOut               = Output(UInt(32.W))
         val memoryDataOut       = Output(UInt(32.W))
         val aluResultOut        = Output(UInt(32.W))
         val controlSignalsOut   = Output(new ControlSignals)
         val registerRdOut       = Output(UInt(5.W))
     })
 
+    val PCDelayed              = RegInit(0.U(32.W))
     val aluResultDelayed       = RegInit(0.U(32.W))
     val controlSignalsDelayed  = RegInit(0.U.asTypeOf(new ControlSignals))
     val registerRdDelayed      = RegInit(0.U(5.W))
 
+    PCDelayed                 := io.PCIn
     aluResultDelayed          := io.aluResultIn
     controlSignalsDelayed     := io.controlSignalsIn
     registerRdDelayed         := io.registerRdIn
 
+    io.PCOut                  := PCDelayed
     io.memoryDataOut          := io.memoryDataIn // Is delayed in the Dmem already
     io.aluResultOut           := aluResultDelayed
     io.controlSignalsOut      := controlSignalsDelayed

@@ -10,7 +10,7 @@ class Execution extends MultiIOModule {
 
   val io = IO(
     new Bundle {
-      val PC             = Input(UInt(32.W))
+      val PCIn           = Input(UInt(32.W))
       val readData1      = Input(UInt(32.W))
       val readData2      = Input(UInt(32.W))
       val immediate      = Input(SInt(32.W))
@@ -22,6 +22,7 @@ class Execution extends MultiIOModule {
       val op2Select      = Input(UInt(1.W))
       val ALUop          = Input(UInt(4.W))
 
+      val PCOut             = Output(UInt(32.W))
       val aluResult         = Output(UInt(32.W))
       val branchTaken       = Output(Bool())
       val branchTarget      = Output(UInt(32.W))
@@ -46,7 +47,7 @@ class Execution extends MultiIOModule {
   // these are the muxes setting the ALU input 
   switch(io.op1Select){
     is(Op1Select.PC){
-      alu.op1 := io.PC
+      alu.op1 := io.PCIn
     }
     is(Op1Select.rs1){
       alu.op1 := io.readData1
@@ -69,10 +70,25 @@ class Execution extends MultiIOModule {
   branch.r2         := io.readData2
   branch.branchType := io.branchType
 
-  io.branchTaken    := (io.controlSignals.branch || branch.branchTaken) && io.controlSignals.jump
-  io.branchTarget   := io.PC + io.immediate.asUInt
+  io.branchTaken    := (io.controlSignals.branch || io.controlSignals.jump) && branch.branchTaken
+
+ when(io.controlSignals.jump) {
+    when(io.op1Select === Op1Select.rs1) {// JALR
+      io.branchTarget := alu.aluResult & "hFFFFFFFE".U
+    }.otherwise {// JAL 
+      io.branchTarget := alu.aluResult
+    }
+  }.otherwise {// BEQ/BNE/BLT...
+    io.branchTarget := io.PCIn + io.immediate.asUInt
+  }
+  // when(io.controlSignals.jump) {
+  //   io.branchTarget := alu.aluResult & "hFFFFFFFE".U
+  // }.otherwise {
+  //   io.branchTarget := io.PCIn + io.immediate.asUInt
+  // }
 
   // Sets the output 
+  io.PCOut             := io.PCIn
   io.aluResult         := alu.aluResult
   io.readData2Out      := io.readData2
   io.registerRdOut     := io.registerRd

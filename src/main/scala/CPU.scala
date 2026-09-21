@@ -71,7 +71,7 @@ class CPU extends MultiIOModule {
   IDEXBarrier.readData2In      := ID.io.readData2
   IDEXBarrier.registerRdIn     := ID.io.registerRd
 
-  EX.io.PC             := IDEXBarrier.PCOut    
+  EX.io.PCIn           := IDEXBarrier.PCOut    
   EX.io.controlSignals := IDEXBarrier.controlSignalsOut
   EX.io.branchType     := IDEXBarrier.branchTypeOut
   EX.io.op1Select      := IDEXBarrier.op1SelectOut
@@ -87,17 +87,20 @@ class CPU extends MultiIOModule {
   IF.io.branchTarget := EX.io.branchTarget
 
   // EX-MEM Barrier Connection
+  EXMEMBarrier.PCIn               := EX.io.PCOut
   EXMEMBarrier.aluResultIn        := EX.io.aluResult
   EXMEMBarrier.readData2In        := EX.io.readData2Out
   EXMEMBarrier.registerRdIn       := EX.io.registerRdOut
   EXMEMBarrier.controlSignalsIn   := EX.io.controlSignalsOut
      
+  MEM.io.PCIn             := EXMEMBarrier.PCOut 
   MEM.io.aluResult        := EXMEMBarrier.aluResultOut 
   MEM.io.readData2        := EXMEMBarrier.readData2Out 
   MEM.io.registerRd       := EXMEMBarrier.registerRdOut  
   MEM.io.controlSignals   := EXMEMBarrier.controlSignalsOut 
 
   // MEM-WB
+  MEMWBBarrier.PCIn             := MEM.io.PCOut
   MEMWBBarrier.aluResultIn      := MEM.io.aluResultOut
   MEMWBBarrier.memoryDataIn     := MEM.io.memoryDataOut
   MEMWBBarrier.controlSignalsIn := MEM.io.controlSignalsOut
@@ -106,11 +109,20 @@ class CPU extends MultiIOModule {
 
   // WB logic
   
-  // Mux(condition, valueIfTrue, valueIfFalse)
-  val writeData = Mux(
-    MEMWBBarrier.controlSignalsOut.memRead,
-    MEMWBBarrier.memoryDataOut,
-    MEMWBBarrier.aluResultOut
+  //Mux(condition, valueIfTrue, valueIfFalse)
+  // val writeData = Mux(
+  //   MEMWBBarrier.controlSignalsOut.memRead,
+  //   MEMWBBarrier.memoryDataOut,
+  //   MEMWBBarrier.aluResultOut,
+  // )
+
+  // Three way mux for jump as well
+  val writeData =  MuxCase(
+    MEMWBBarrier.aluResultOut,  // Default
+    Seq(
+      MEMWBBarrier.controlSignalsOut.memRead ->  MEMWBBarrier.memoryDataOut,
+      MEMWBBarrier.controlSignalsOut.jump    -> (MEMWBBarrier.PCOut + 4.U)
+    )
   )
 
   ID.io.writeEnable := MEMWBBarrier.controlSignalsOut.regWrite
