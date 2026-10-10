@@ -102,9 +102,14 @@ class CPU extends MultiIOModule {
   MEM.io.registerRd       := EXMEMBarrier.registerRdOut  
   MEM.io.controlSignals   := EXMEMBarrier.controlSignalsOut 
 
+  val jumpWriteData = Mux(
+    EXMEMBarrier.controlSignalsOut.jump,
+    EXMEMBarrier.PCOut + 4.U,
+    MEM.io.aluResultOut
+  )
+
   // MEM-WB
-  MEMWBBarrier.PCIn             := MEM.io.PCOut
-  MEMWBBarrier.aluResultIn      := MEM.io.aluResultOut
+  MEMWBBarrier.aluResultIn      := jumpWriteData
   MEMWBBarrier.memoryDataIn     := MEM.io.memoryDataOut
   MEMWBBarrier.controlSignalsIn := MEM.io.controlSignalsOut
   MEMWBBarrier.registerRdIn     := MEM.io.registerRdOut
@@ -112,21 +117,21 @@ class CPU extends MultiIOModule {
 
   // WB logic
   
-  //Mux(condition, valueIfTrue, valueIfFalse)
-  // val writeData = Mux(
-  //   MEMWBBarrier.controlSignalsOut.memRead,
-  //   MEMWBBarrier.memoryDataOut,
-  //   MEMWBBarrier.aluResultOut,
-  // )
+  // Mux(condition, valueIfTrue, valueIfFalse)
+  val writeData = Mux(
+    MEMWBBarrier.controlSignalsOut.memRead,
+    MEMWBBarrier.memoryDataOut,
+    MEMWBBarrier.aluResultOut,
+  )
 
   // Three way mux for jump as well
-  val writeData =  MuxCase(
-    MEMWBBarrier.aluResultOut,  // Default
-    Seq(
-      MEMWBBarrier.controlSignalsOut.memRead ->  MEMWBBarrier.memoryDataOut,
-      MEMWBBarrier.controlSignalsOut.jump    -> (MEMWBBarrier.PCOut + 4.U)
-    )
-  )
+  // val writeData =  MuxCase(
+  //   MEMWBBarrier.aluResultOut,  // Default
+  //   Seq(
+  //     MEMWBBarrier.controlSignalsOut.memRead ->  MEMWBBarrier.memoryDataOut,
+  //     MEMWBBarrier.controlSignalsOut.jump    -> (MEMWBBarrier.PCOut + 4.U)
+  //   )
+  // )
 
   ID.io.writeEnable := MEMWBBarrier.controlSignalsOut.regWrite
   ID.io.writeAddress := MEMWBBarrier.registerRdOut

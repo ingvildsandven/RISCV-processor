@@ -150,30 +150,25 @@ class MEMWBBarrier extends MultiIOModule {
 
   val io = IO(
     new Bundle {
-        val PCIn                = Input(UInt(32.W))
         val memoryDataIn        = Input(UInt(32.W))
         val aluResultIn         = Input(UInt(32.W))
         val controlSignalsIn    = Input(new ControlSignals)
         val registerRdIn        = Input(UInt(5.W))
 
-        val PCOut               = Output(UInt(32.W))
         val memoryDataOut       = Output(UInt(32.W))
         val aluResultOut        = Output(UInt(32.W))
         val controlSignalsOut   = Output(new ControlSignals)
         val registerRdOut       = Output(UInt(5.W))
     })
 
-    val PCDelayed              = RegInit(0.U(32.W))
     val aluResultDelayed       = RegInit(0.U(32.W))
     val controlSignalsDelayed  = RegInit(0.U.asTypeOf(new ControlSignals))
     val registerRdDelayed      = RegInit(0.U(5.W))
 
-    PCDelayed                 := io.PCIn
     aluResultDelayed          := io.aluResultIn
     controlSignalsDelayed     := io.controlSignalsIn
     registerRdDelayed         := io.registerRdIn
 
-    io.PCOut                  := PCDelayed
     io.memoryDataOut          := io.memoryDataIn // Is delayed in the Dmem already
     io.aluResultOut           := aluResultDelayed
     io.controlSignalsOut      := controlSignalsDelayed
