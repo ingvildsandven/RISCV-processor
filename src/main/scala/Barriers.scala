@@ -12,20 +12,35 @@ class IFIDBarrier extends MultiIOModule{
             val PCIn            = Input(UInt(32.W))
             val PCOut           = Output(UInt(32.W))
             val flush           = Input(Bool())
+            val stall           = Input(Bool())
         }
     )
 
     // Defining a register where PC is stored
     val PCDelayed      = RegInit(0.U(32.W))
+    val savedInstruction = RegInit(Instruction.NOP)
 
-    PCDelayed         := io.PCIn
-    io.PCOut          := PCDelayed
+    // Remember whether the previous cycle was stalled
+    val wasStalled = RegNext(io.stall, false.B)
+
+    // Capture the instruction when a stall first begins
+    when(io.stall && !wasStalled) {
+        savedInstruction := io.instructionIn
+    }
+
+    when(!io.stall){
+        PCDelayed         := io.PCIn
+    }
 
     when(io.flush) {
         io.instructionOut := Instruction.NOP
+    }.elsewhen(wasStalled) {
+        io.instructionOut := savedInstruction
     }.otherwise {
         io.instructionOut := io.instructionIn
     }
+
+    io.PCOut          := PCDelayed
 }
 
 class IDEXBarrier extends MultiIOModule{
@@ -44,7 +59,10 @@ class IDEXBarrier extends MultiIOModule{
             val readData1In       = Input(UInt(32.W))
             val readData2In       = Input(UInt(32.W))
             val registerRdIn      = Input(UInt(5.W))
+            val registerRs1In     = Input(UInt(5.W))
+            val registerRs2In     = Input(UInt(5.W))
             val flush             = Input(Bool())
+            val stall             = Input(Bool())
 
             // Output
             val PCOut             = Output(UInt(32.W))
@@ -58,6 +76,9 @@ class IDEXBarrier extends MultiIOModule{
             val readData1Out      = Output(UInt(32.W))
             val readData2Out      = Output(UInt(32.W))
             val registerRdOut     = Output(UInt(5.W))
+            val registerRs1Out    = Output(UInt(5.W))
+            val registerRs2Out    = Output(UInt(5.W))
+
         }
     )
 
@@ -72,7 +93,10 @@ class IDEXBarrier extends MultiIOModule{
     val readData1Delayed      = RegInit(0.U(32.W))
     val readData2Delayed      = RegInit(0.U(32.W))
     val registerRdOutDelayed  = RegInit(0.U(5.W))
+    val registerRs1Delayed    = RegInit(0.U(5.W))
+    val registerRs2Delayed    = RegInit(0.U(5.W))
 
+    when(!io.stall){
     // Values to each register
     PCDelayed                := io.PCIn
     branchTypeOutDelayed     := io.branchTypeIn
@@ -83,11 +107,14 @@ class IDEXBarrier extends MultiIOModule{
     readData1Delayed         := io.readData1In
     readData2Delayed         := io.readData2In
     registerRdOutDelayed     := io.registerRdIn
+    registerRs1Delayed       := io.registerRs1In
+    registerRs2Delayed       := io.registerRs2In
 
     when(io.flush){
         controlSignalsDelayed := ControlSignals.nop
     }.otherwise{
         controlSignalsDelayed := io.controlSignalsIn
+    }
     }
 
     // Set output
@@ -101,6 +128,8 @@ class IDEXBarrier extends MultiIOModule{
     io.readData1Out          := readData1Delayed    
     io.readData2Out          := readData2Delayed        
     io.registerRdOut         := registerRdOutDelayed     
+    io.registerRs1Out        := registerRs1Delayed
+    io.registerRs2Out        := registerRs2Delayed
     
 }
 
@@ -114,6 +143,8 @@ class EXMEMBarrier extends MultiIOModule { // AI generated
       val readData2In         = Input(UInt(32.W))
       val registerRdIn        = Input(UInt(5.W))
       val controlSignalsIn    = Input(new ControlSignals)
+      val stall               = Input(Bool())
+
 
       // Outputs
       val PCOut               = Output(UInt(32.W))
@@ -136,7 +167,13 @@ class EXMEMBarrier extends MultiIOModule { // AI generated
   aluResultDelayed      := io.aluResultIn
   readData2Delayed      := io.readData2In
   registerRdDelayed     := io.registerRdIn
-  controlSignalsDelayed := io.controlSignalsIn
+ 
+  // Makes controlsignal bubble on stall but keep executing
+  when(io.stall) {
+    controlSignalsDelayed := ControlSignals.nop
+  }.otherwise {
+    controlSignalsDelayed := io.controlSignalsIn
+  }
 
   // Outputs
   io.PCOut              := PCDelayed

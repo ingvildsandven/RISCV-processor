@@ -70,6 +70,8 @@ class CPU extends MultiIOModule {
   IDEXBarrier.readData1In      := ID.io.readData1
   IDEXBarrier.readData2In      := ID.io.readData2
   IDEXBarrier.registerRdIn     := ID.io.registerRd
+  IDEXBarrier.registerRs1In    := ID.io.registerRs1
+  IDEXBarrier.registerRs2In    := ID.io.registerRs2
 
   EX.io.PCIn           := IDEXBarrier.PCOut    
   EX.io.controlSignals := IDEXBarrier.controlSignalsOut
@@ -81,12 +83,20 @@ class CPU extends MultiIOModule {
   EX.io.readData1      := IDEXBarrier.readData1Out
   EX.io.readData2      := IDEXBarrier.readData2Out
   EX.io.registerRd     := IDEXBarrier.registerRdOut
+  EX.io.registerRs1    := IDEXBarrier.registerRs1Out
+  EX.io.registerRs2    := IDEXBarrier.registerRs2Out
 
-  IFIDBarrier.flush := EX.io.branchTaken // IFID is flushed when EX is set
-  IDEXBarrier.flush := EX.io.branchTaken
+  // Implements stalling
+  IF.io.stall               := EX.io.stall
+  IFIDBarrier.stall         := EX.io.stall
+  IDEXBarrier.stall         := EX.io.stall
+  EXMEMBarrier.stall        := EX.io.stall
+
+  IFIDBarrier.flush := EX.io.branchTaken && !EX.io.stall // IFID is flushed when EX is set
+  IDEXBarrier.flush := EX.io.branchTaken && !EX.io.stall // Stalled branch does not redirect or flush instructions
 
   // EX to IF, jump connection
-  IF.io.branchTaken := EX.io.branchTaken
+  IF.io.branchTaken := EX.io.branchTaken && !EX.io.stall
   IF.io.branchTarget := EX.io.branchTarget
 
   // EX-MEM Barrier Connection
@@ -108,6 +118,12 @@ class CPU extends MultiIOModule {
     MEM.io.aluResultOut
   )
 
+  // Forward from mem
+  EX.io.memRd         := EXMEMBarrier.registerRdOut
+  EX.io.memRegWrite   := EXMEMBarrier.controlSignalsOut.regWrite
+  EX.io.memRead       := EXMEMBarrier.controlSignalsOut.memRead
+  EX.io.memResult     := jumpWriteData
+
   // MEM-WB
   MEMWBBarrier.aluResultIn      := jumpWriteData
   MEMWBBarrier.memoryDataIn     := MEM.io.memoryDataOut
@@ -124,18 +140,13 @@ class CPU extends MultiIOModule {
     MEMWBBarrier.aluResultOut,
   )
 
-  // Three way mux for jump as well
-  // val writeData =  MuxCase(
-  //   MEMWBBarrier.aluResultOut,  // Default
-  //   Seq(
-  //     MEMWBBarrier.controlSignalsOut.memRead ->  MEMWBBarrier.memoryDataOut,
-  //     MEMWBBarrier.controlSignalsOut.jump    -> (MEMWBBarrier.PCOut + 4.U)
-  //   )
-  // )
+  // Forward info from WB
+  EX.io.wbRd          := MEMWBBarrier.registerRdOut
+  EX.io.wbRegWrite    := MEMWBBarrier.controlSignalsOut.regWrite
+  EX.io.wbResult      := writeData
 
   ID.io.writeEnable := MEMWBBarrier.controlSignalsOut.regWrite
   ID.io.writeAddress := MEMWBBarrier.registerRdOut
   ID.io.writeData := writeData
 
- 
 }

@@ -37,7 +37,9 @@ class InstructionDecode extends MultiIOModule {
       val readData1  = Output(UInt(32.W))
       val readData2  = Output(UInt(32.W))
       val registerRd = Output(UInt(5.W))
-
+      val registerRs1 = Output(UInt(5.W))
+      val registerRs2 = Output(UInt(5.W))
+      
     }
   )
 
@@ -61,9 +63,30 @@ class InstructionDecode extends MultiIOModule {
   registers.io.writeAddress := io.writeAddress
   registers.io.writeData    := io.writeData
 
-  io.readData1  := registers.io.readData1
-  io.readData2  := registers.io.readData2
+  // Gives decode the newest value when wb is writing the same reg decode is reading
+  val bypassRs1 = io.writeEnable &&
+    (io.writeAddress =/= 0.U) &&
+    (io.writeAddress === io.input.registerRs1)
+
+  io.readData1 := Mux(
+    bypassRs1,
+    io.writeData,
+    registers.io.readData1
+  )
+
+  val bypassRs2 = io.writeEnable &&
+    (io.writeAddress =/= 0.U) &&
+    (io.writeAddress === io.input.registerRs2)
+
+  io.readData2 := Mux(
+    bypassRs2,
+    io.writeData,
+    registers.io.readData2
+  ) 
+
   io.registerRd := io.input.registerRd
+  io.registerRs1 := io.input.registerRs1
+  io.registerRs2 := io.input.registerRs2
 
   // Decoding the input
   decoder.instruction := io.input
