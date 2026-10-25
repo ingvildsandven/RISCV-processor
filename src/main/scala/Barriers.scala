@@ -17,22 +17,23 @@ class IFIDBarrier extends MultiIOModule{
     )
 
     // Defining a register where PC is stored
-    val PCDelayed      = RegInit(0.U(32.W))
+    val PCDelayed        = RegInit(0.U(32.W))
     val savedInstruction = RegInit(Instruction.NOP)
-
+    
     // Remember whether the previous cycle was stalled
-    val wasStalled = RegNext(io.stall, false.B)
+    val wasStalled       = RegNext(io.stall, false.B)
+    val flushDelayed     = RegNext(io.flush, false.B)
 
     // Capture the instruction when a stall first begins
     when(io.stall && !wasStalled) {
-        savedInstruction := io.instructionIn
+        savedInstruction  := io.instructionIn
     }
 
     when(!io.stall){
         PCDelayed         := io.PCIn
     }
 
-    when(io.flush) {
+    when(io.flush || flushDelayed) {
         io.instructionOut := Instruction.NOP
     }.elsewhen(wasStalled) {
         io.instructionOut := savedInstruction

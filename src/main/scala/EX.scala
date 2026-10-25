@@ -56,8 +56,17 @@ class Execution extends MultiIOModule {
   forward.rs1 := io.registerRs1
   forward.rs2 := io.registerRs2
 
-  forward.registerVal1 := io.readData1
-  forward.registerVal2 := io.readData2
+  val savedRs1 = RegInit(0.U(32.W))// Preserve operands while this instruction waits in ex
+  val savedRs2 = RegInit(0.U(32.W))
+  val wasStalled = RegNext(io.stall, false.B)
+
+  when(io.stall){
+    savedRs1 := forward.forwardedRs1
+    savedRs2 := forward.forwardedRs2
+  }
+
+  forward.registerVal1 := Mux(wasStalled, savedRs1, io.readData1)
+  forward.registerVal2 := Mux(wasStalled, savedRs2, io.readData2)
 
   forward.memRd       := io.memRd
   forward.memRegWrite := io.memRegWrite
